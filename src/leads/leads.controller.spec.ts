@@ -16,14 +16,22 @@ describe('LeadsController', () => {
     },
   };
 
+  const mockListResponse = {
+    success: true,
+    data: [],
+    count: 0,
+  };
+  let getLeadsMock: jest.Mock;
+
   beforeEach(async () => {
-    createLeadMock = jest.fn().mockReturnValue(mockResponse);
+    createLeadMock = jest.fn().mockResolvedValue(mockResponse);
+    getLeadsMock = jest.fn().mockResolvedValue(mockListResponse);
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LeadsController],
       providers: [
         {
           provide: LeadsService,
-          useValue: { createLead: createLeadMock },
+          useValue: { createLead: createLeadMock, getAllLeads: getLeadsMock },
         },
       ],
     }).compile();
@@ -42,12 +50,21 @@ describe('LeadsController', () => {
       message: 'Wir suchen eine CRM-Lösung. Budget ca. 15.000€, Start Q2.',
     };
 
-    it('calls service.createLead with the DTO and returns the result', () => {
-      const result = controller.create(validDto);
+    it('calls service.createLead with the DTO and returns the result', async () => {
+      const result = await controller.create(validDto);
 
       expect(createLeadMock).toHaveBeenCalledWith(validDto);
       expect(createLeadMock).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('getLeads', () => {
+    it('calls service.getAllLeads and returns the result', async () => {
+      const result = await controller.getLeads();
+
+      expect(getLeadsMock).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockListResponse);
     });
   });
 });
