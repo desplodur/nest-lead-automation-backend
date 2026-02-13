@@ -10,6 +10,7 @@ import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from '@prisma/client/runtime/library';
+import { AIService } from '../ai/ai.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { LeadListResponseDto, LeadItemDto } from './dto/lead-list-response.dto';
@@ -19,10 +20,14 @@ import { LeadResponseDto } from './dto/lead-response.dto';
 export class LeadsService {
   private readonly logger = new Logger(LeadsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AIService,
+  ) {}
 
   /**
-   * Persists a lead to the database and returns the created record metadata.
+   * Persists a lead to the database, runs AI analysis, and returns the created record with optional AI data.
+   * On AI failure, lead is still saved; response includes a warning and no analysis/generatedEmail.
    * @throws BadRequestException on validation error
    * @throws ConflictException on duplicate (e.g. unique constraint)
    * @throws ServiceUnavailableException when database is unreachable
@@ -40,12 +45,56 @@ export class LeadsService {
 
       this.logger.log(`Lead received: ${lead.id} from ${dto.email}`);
 
+      const baseData = {
+        leadId: lead.id,
+        receivedAt: lead.createdAt.toISOString(),
+      };
+
+      let analysis: Awaited<ReturnType<AIService['analyzeLead']>>;
+      let generatedEmail: string;
+      try {
+        analysis = await this.aiService.analyzeLead(lead);
+        generatedEmail = await this.aiService.generateEmail(lead, analysis);
+      } catch (aiError) {
+        this.logger.warn(
+          `AI analysis failed for lead ${lead.id}: ${aiError instanceof Error ? aiError.message : String(aiError)}`,
+        );
+        return {
+          success: true,
+          message: 'Lead received successfully',
+          data: baseData,
+          warning: 'AI analysis failed, lead saved successfully',
+        };
+      }
+
+      try {
+        await this.prisma.lead.update({
+          where: { id: lead.id },
+          data: {
+            score: analysis.score,
+            analysis: analysis as object,
+            generatedEmail: generatedEmail || null,
+          } as Parameters<PrismaService['lead']['update']>[0]['data'],
+        });
+      } catch (updateError) {
+        this.logger.error(
+          `Failed to persist AI results for lead ${lead.id}: ${updateError instanceof Error ? updateError.message : String(updateError)}`,
+        );
+        throw updateError;
+      }
+
       return {
         success: true,
         message: 'Lead received successfully',
         data: {
-          leadId: lead.id,
-          receivedAt: lead.createdAt.toISOString(),
+          ...baseData,
+          analysis: {
+            score: analysis.score,
+            budget: analysis.budget,
+            urgency: analysis.urgency,
+            reasoning: analysis.reasoning,
+          },
+          generatedEmail: generatedEmail || undefined,
         },
       };
     } catch (error) {
@@ -64,11 +113,19 @@ export class LeadsService {
         orderBy: { createdAt: 'desc' },
       });
 
-      const data: LeadItemDto[] = leads.map((lead) => ({
+      type LeadWithAi = (typeof leads)[number] & {
+        score?: number | null;
+        analysis?: unknown;
+        generatedEmail?: string | null;
+      };
+      const data: LeadItemDto[] = (leads as LeadWithAi[]).map((lead) => ({
         id: lead.id,
         name: lead.name,
         email: lead.email,
         message: lead.message,
+        score: lead.score ?? undefined,
+        analysis: (lead.analysis as LeadItemDto['analysis']) ?? undefined,
+        generatedEmail: lead.generatedEmail ?? undefined,
         createdAt: lead.createdAt.toISOString(),
         updatedAt: lead.updatedAt.toISOString(),
       }));

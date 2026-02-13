@@ -4,6 +4,12 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  if (!process.env.GROQ_API_KEY?.trim()) {
+    console.warn(
+      'GROQ_API_KEY is not set. Lead creation will succeed but AI analysis and email generation will be skipped.',
+    );
+  }
+
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(

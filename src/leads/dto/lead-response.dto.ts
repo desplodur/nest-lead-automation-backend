@@ -1,4 +1,21 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+/**
+ * AI analysis sub-object for POST /leads response.
+ */
+export class LeadAnalysisDto {
+  @ApiProperty({ example: 87, description: 'Fit score 0-100' })
+  score: number;
+
+  @ApiPropertyOptional({ example: 15000, description: 'Extracted budget or null' })
+  budget: number | null;
+
+  @ApiProperty({ example: 'medium', enum: ['low', 'medium', 'high'] })
+  urgency: string;
+
+  @ApiProperty({ example: 'Clear use case, realistic budget...' })
+  reasoning: string;
+}
 
 /**
  * Nested data object returned when a lead is successfully created.
@@ -15,6 +32,18 @@ export class LeadResponseDataDto {
     example: '2025-02-13T14:30:00.000Z',
   })
   receivedAt: string;
+
+  @ApiPropertyOptional({
+    description: 'AI analysis (score, budget, urgency, reasoning)',
+    type: LeadAnalysisDto,
+  })
+  analysis?: LeadAnalysisDto;
+
+  @ApiPropertyOptional({
+    description: 'Generated personalized email body',
+    example: 'Hallo Max,\n\nvielen Dank...',
+  })
+  generatedEmail?: string;
 }
 
 /**
@@ -34,8 +63,14 @@ export class LeadResponseDto {
   message: string;
 
   @ApiProperty({
-    description: 'Lead metadata (id and timestamp)',
+    description: 'Lead metadata (id, timestamp, optional AI data)',
     type: LeadResponseDataDto,
   })
   data: LeadResponseDataDto;
+
+  @ApiPropertyOptional({
+    description: 'Present when lead was saved but AI analysis failed',
+    example: 'AI analysis failed, lead saved successfully',
+  })
+  warning?: string;
 }

@@ -27,7 +27,8 @@ export class LeadsController {
   @ApiBody({ type: CreateLeadDto })
   @ApiResponse({
     status: 201,
-    description: 'Lead saved successfully',
+    description:
+      'Lead saved successfully. Includes AI analysis and generated email when Groq succeeds; optional warning when AI fails.',
     type: LeadResponseDto,
   })
   @ApiResponse({
@@ -46,11 +47,11 @@ export class LeadsController {
   @ApiOperation({
     summary: 'List all leads',
     description:
-      'Returns all leads from the database, ordered by newest first. Used for demo and lead history.',
+      'Returns all leads from the database (with optional score, analysis, generatedEmail), ordered by newest first.',
   })
   @ApiResponse({
     status: 200,
-    description: 'List of leads',
+    description: 'List of leads including AI fields when present',
     type: LeadListResponseDto,
   })
   @ApiResponse({

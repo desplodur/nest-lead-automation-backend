@@ -11,10 +11,13 @@ datasource db {
 }
 
 model Lead {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  email     String
-  message   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  email           String
+  message         String   @db.Text
+  score           Int?
+  analysis        Json?
+  generatedEmail String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
