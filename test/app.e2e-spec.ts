@@ -5,6 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { LeadResponseDto } from './../src/leads/dto/lead-response.dto';
+import { PrismaService } from './../src/prisma/prisma.service';
 
 /** Validation error response from NestJS ValidationPipe */
 interface ValidationErrorBody {
@@ -13,13 +14,22 @@ interface ValidationErrorBody {
   statusCode: number;
 }
 
+/** Minimal PrismaService mock so e2e can run without a real database. */
+const mockPrismaService = {
+  onModuleInit: () => Promise.resolve(),
+  onModuleDestroy: () => Promise.resolve(),
+};
+
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue(mockPrismaService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

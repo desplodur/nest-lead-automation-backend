@@ -5,7 +5,7 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 
 describe('LeadsController', () => {
   let controller: LeadsController;
-  let service: LeadsService;
+  let createLeadMock: jest.Mock;
 
   const mockResponse = {
     success: true,
@@ -17,20 +17,18 @@ describe('LeadsController', () => {
   };
 
   beforeEach(async () => {
+    createLeadMock = jest.fn().mockReturnValue(mockResponse);
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LeadsController],
       providers: [
         {
           provide: LeadsService,
-          useValue: {
-            createLead: jest.fn().mockReturnValue(mockResponse),
-          },
+          useValue: { createLead: createLeadMock },
         },
       ],
     }).compile();
 
     controller = module.get<LeadsController>(LeadsController);
-    service = module.get<LeadsService>(LeadsService);
   });
 
   it('should be defined', () => {
@@ -47,7 +45,6 @@ describe('LeadsController', () => {
     it('calls service.createLead with the DTO and returns the result', () => {
       const result = controller.create(validDto);
 
-      const createLeadMock = service.createLead as jest.Mock;
       expect(createLeadMock).toHaveBeenCalledWith(validDto);
       expect(createLeadMock).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResponse);
