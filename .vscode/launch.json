@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Nest",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "console": "integratedTerminal",
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Nest",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    }
+  ]
+}
