@@ -51,7 +51,7 @@ describe('LeadsController', () => {
     };
 
     it('calls service.createLead with the DTO and returns the result', async () => {
-      const result = await controller.create(validDto);
+      const result = await Promise.resolve(controller.create(validDto));
 
       expect(createLeadMock).toHaveBeenCalledWith(validDto);
       expect(createLeadMock).toHaveBeenCalledTimes(1);
@@ -61,7 +61,7 @@ describe('LeadsController', () => {
 
   describe('getLeads', () => {
     it('calls service.getAllLeads and returns the result', async () => {
-      const result = await controller.getLeads();
+      const result = await Promise.resolve(controller.getLeads());
 
       expect(getLeadsMock).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockListResponse);
