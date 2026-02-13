@@ -1,13 +1,26 @@
-import { ValidationPipe } from '@nestjs/common';
+import { CanActivate, Injectable, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { LeadResponseDto } from './../src/leads/dto/lead-response.dto';
 import { LeadListResponseDto } from './../src/leads/dto/lead-list-response.dto';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { SanitizePipe } from './../src/common/pipes/sanitize.pipe';
 import { v4 as uuidv4 } from 'uuid';
+import { NextFunction, Request, Response } from 'express';
+import helmet from 'helmet';
+
+/** E2E: allow all requests (disable rate limiting in tests). */
+@Injectable()
+class AllowAllGuard implements CanActivate {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- interface requires context
+  canActivate(_context: unknown): boolean {
+    return true;
+  }
+}
 
 /** Validation error response from NestJS ValidationPipe */
 interface ValidationErrorBody {
@@ -47,6 +60,21 @@ const mockPrismaService = {
       e2eLeadStore.push(lead);
       return Promise.resolve(lead);
     },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Record<string, unknown>;
+    }) => {
+      const idx = e2eLeadStore.findIndex((l) => l.id === where.id);
+      if (idx === -1) return Promise.reject(new Error('Lead not found'));
+      e2eLeadStore[idx] = {
+        ...e2eLeadStore[idx],
+        ...data,
+      } as (typeof e2eLeadStore)[0];
+      return Promise.resolve(e2eLeadStore[idx]);
+    },
     findMany: () => {
       const sorted = [...e2eLeadStore].sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
@@ -66,10 +94,23 @@ describe('App (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(mockPrismaService)
+      .overrideProvider(APP_GUARD)
+      .useClass(AllowAllGuard)
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.use((_req: Request, res: Response, next: NextFunction) => {
+      res.removeHeader('X-Powered-By');
+      next();
+    });
+    app.use(
+      helmet({
+        contentSecurityPolicy: true,
+        crossOriginEmbedderPolicy: false,
+      }),
+    );
     app.useGlobalPipes(
+      new SanitizePipe(),
       new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
@@ -103,6 +144,17 @@ describe('App (e2e)', () => {
           expect(body.status).toBe('ok');
           expect(body.timestamp).toBeDefined();
           expect(new Date(body.timestamp).toISOString()).toBe(body.timestamp);
+        });
+    });
+
+    it('returns security headers (X-Frame-Options, X-Content-Type-Options) and no X-Powered-By', () => {
+      return request(app.getHttpServer())
+        .get('/health')
+        .expect(200)
+        .expect((res) => {
+          expect(res.headers['x-frame-options']).toBeDefined();
+          expect(res.headers['x-content-type-options']).toBe('nosniff');
+          expect(res.headers['x-powered-by']).toBeUndefined();
         });
     });
   });

@@ -76,6 +76,7 @@ describe('Leads (e2e with real database)', () => {
   (hasDatabaseUrl ? it : it.skip)(
     'POST 3 leads then GET leads returns all 3 ordered newest first',
     async () => {
+      // 3 POSTs each trigger AI calls; allow up to 60s
       const leads = [
         {
           name: 'First',
@@ -113,5 +114,6 @@ describe('Leads (e2e with real database)', () => {
       expect(names).toContain('Second');
       expect(names).toContain('Third');
     },
+    60_000,
   );
 });

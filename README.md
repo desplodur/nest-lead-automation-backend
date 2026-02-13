@@ -57,6 +57,32 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Docker
+
+**Prerequisites:** Docker and Docker Compose.
+
+**Quick start:**
+
+```bash
+# Build and start (app + PostgreSQL)
+docker-compose up -d
+
+# Run database migrations
+docker-compose exec app npx prisma migrate deploy
+
+# View logs
+docker-compose logs -f app
+
+# Stop
+docker-compose down
+```
+
+**Environment:** Copy `.env.example` to `.env` and set at least `DATABASE_URL` and optionally `GROQ_API_KEY`. For Docker Compose, `DATABASE_URL` is overridden to `postgresql://postgres:postgres@postgres:5432/leads`.
+
+**Verify:** `curl http://localhost:3000/health` and `curl http://localhost:3000/api/docs` for Swagger. The app runs as non-root user and includes a health check.
+
+**Production:** Use a strong `POSTGRES_PASSWORD`, set `NODE_ENV=production`, and configure `ALLOWED_ORIGINS` and rate limit env vars as needed.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
