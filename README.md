@@ -1,124 +1,101 @@
+# Lead Automation Backend
+
+NestJS-Backend für Lead-Erfassung mit optionaler **AI-Qualifizierung** (Groq) und E-Mail-Vorschlägen. REST-API mit **Swagger**, PostgreSQL (Prisma), Rate-Limiting und CORS.
+
+## Was macht das Programm?
+
+Die Anwendung ist ein **Backend für Sales-Leads**: Ein Frontend oder externe Systeme können über die REST-API neue Leads übermitteln (Name, E-Mail, Nachricht). Jeder Lead wird in einer **PostgreSQL**-Datenbank gespeichert und kann über eine weitere API-Abfrage gelistet werden.
+
+Optional wird jeder neue Lead per **Groq (KI)** analysiert: Es werden ein Qualitäts-Score, eine kurze Einordnung und ein vorgeschlagener E-Mail-Text erzeugt und am Lead gespeichert. So können Vertriebsteams priorisieren und schneller antworten. Ohne konfigurierten Groq-API-Key funktioniert die Erfassung und Auflistung weiterhin; die KI-Schritte werden dann übersprungen.
+
+Zusätzlich bietet die Anwendung einen Health-Check für Monitoring, Rate-Limits zum Schutz vor Überlastung sowie CORS- und Sicherheits-Einstellungen (Helmet, Sanitization). Die API ist über **Swagger** unter `/api/docs` vollständig dokumentiert.
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Dokumentation
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+| Thema | Datei |
+|-------|--------|
+| **Architektur** (Module, Abläufe) | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| **Konfiguration** (Env-Variablen) | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
+| **Tests** (Unit, E2E, Integration) | [docs/TESTING.md](docs/TESTING.md) |
+| **API & Swagger** | [docs/API.md](docs/API.md) |
 
-## Description
+## Swagger (API-Dokumentation)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Die API ist mit **Swagger UI** vollständig dokumentiert (Endpoints, Schemas, Beispiele, „Try it out“).
 
-## Project setup
+- **Lokal:** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+- **Production:** `https://<deine-domain>/api/docs`
+
+App starten, dann die URL im Browser öffnen – keine Anmeldung nötig. Details siehe [docs/API.md](docs/API.md).
+
+## Projekt-Setup
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+Kopie von `.env.example` nach `.env` anlegen und mindestens `DATABASE_URL` setzen (optional `GROQ_API_KEY` für AI).
+
+## Starten
 
 ```bash
-# development
-$ npm run start
+# Entwicklung
+npm run start
 
-# watch mode
-$ npm run start:dev
+# Watch-Modus
+npm run start:dev
 
-# production mode
-$ npm run start:prod
+# Production
+npm run start:prod
 ```
 
-## Run tests
+## Tests
 
 ```bash
-# unit tests
-$ npm run test
+# Unit- und Integrationstests
+npm run test
 
-# e2e tests
-$ npm run test:e2e
+# E2E-Tests
+npm run test:e2e
 
-# test coverage
-$ npm run test:cov
+# Coverage
+npm run test:cov
 ```
+
+Siehe [docs/TESTING.md](docs/TESTING.md) für die Teststrategie.
 
 ## Docker
 
-**Prerequisites:** Docker and Docker Compose.
-
-**Quick start:**
+**Voraussetzung:** Docker und Docker Compose.
 
 ```bash
-# Build and start (app + PostgreSQL)
+# App + PostgreSQL starten
 docker-compose up -d
 
-# Run database migrations
+# Migrationen ausführen
 docker-compose exec app npx prisma migrate deploy
 
-# View logs
+# Logs
 docker-compose logs -f app
 
-# Stop
+# Stoppen
 docker-compose down
 ```
 
-**Environment:** Copy `.env.example` to `.env` and set at least `DATABASE_URL` and optionally `GROQ_API_KEY`. For Docker Compose, `DATABASE_URL` is overridden to `postgresql://postgres:postgres@postgres:5432/leads`.
+Für Docker setzt `docker-compose` `DATABASE_URL` auf `postgresql://postgres:postgres@postgres:5432/leads`. Weitere Env-Variablen in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
-**Verify:** `curl http://localhost:3000/health` and `curl http://localhost:3000/api/docs` for Swagger. The app runs as non-root user and includes a health check.
+**Prüfen:** `curl http://localhost:3000/health` und [http://localhost:3000/api/docs](http://localhost:3000/api/docs) (Swagger). Die App läuft als Non-Root-User mit Health-Check.
 
-**Production:** Use a strong `POSTGRES_PASSWORD`, set `NODE_ENV=production`, and configure `ALLOWED_ORIGINS` and rate limit env vars as needed.
+**Production:** Starke Passwörter, `NODE_ENV=production`, `ALLOWED_ORIGINS` und Rate-Limits anpassen.
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+[NestJS Deployment](https://docs.nestjs.com/deployment). Option: [NestJS Mau](https://mau.nestjs.com) für AWS.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Lizenz
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT.
