@@ -5,6 +5,13 @@ import { AIService } from './ai.service';
 import type { LeadForAnalysis } from './interfaces/lead-analysis.interface';
 
 const GROQ_BASE = 'https://api.groq.com';
+
+/** Request body shape for Groq chat completions (for nock matcher). */
+interface GroqChatRequestBody {
+  model?: string;
+  messages?: unknown[];
+}
+
 const LEAD: LeadForAnalysis = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   name: 'Tech Startup GmbH',
@@ -39,8 +46,11 @@ describe('AIService', () => {
   describe('analyzeLead', () => {
     it('returns analysis with score, budget, urgency, reasoning for valid lead', async () => {
       nock(GROQ_BASE)
-        .post('/openai/v1/chat/completions', (body) => {
-          return body.model === 'llama-3.3-70b-versatile' && body.messages?.length >= 1;
+        .post('/openai/v1/chat/completions', (body: GroqChatRequestBody) => {
+          return (
+            body.model === 'llama-3.3-70b-versatile' &&
+            (body.messages?.length ?? 0) >= 1
+          );
         })
         .reply(200, {
           choices: [
@@ -154,7 +164,9 @@ describe('AIService', () => {
     });
 
     it.skip('throws on timeout (axios instance used by client bypasses axios.post spy)', async () => {
-      const postSpy = jest.spyOn(axios, 'post').mockRejectedValueOnce(new Error('timeout of 10000ms exceeded'));
+      const postSpy = jest
+        .spyOn(axios, 'post')
+        .mockRejectedValueOnce(new Error('timeout of 10000ms exceeded'));
       await expect(service.analyzeLead(LEAD)).rejects.toThrow('timeout');
       postSpy.mockRestore();
     });
